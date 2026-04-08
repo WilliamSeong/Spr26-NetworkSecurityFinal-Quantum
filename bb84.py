@@ -1,47 +1,29 @@
 # This will be a simulation of BB84 QKE
 import random
+import logging
 
+
+logging.basicConfig(level=logging.INFO)
 
 LENGTH = 1000
 BASIS = ["+", "x"]
-EVE = False
+EVE = True
 
 
-def alice_random_bits(n: int) -> list[str]:
+def generate_alice_bits(n: int) -> list[str]:
     """
         Alice will generate a random bit string of length n
     """
-    print(f"Alice generating bit string of length {n}...")
+    logging.debug(f"Alice generating bit string of length {n}...")
 
     rand_bits = [random.randint(0, 1) for _ in range(n)]
 
     return rand_bits
 
 
-def alice_random_basis(n: int) -> list[str]:
+def generate_rand_basis(n: int) -> list[str]:
     """
-        Alice will generate random basis 
-    """
-    print(f"Alice generating basis list of length {n}...")
-
-    return rand_basis(n)
-
-
-def bob_random_basis(n: int) -> list[str]:
-    """
-        Bob will generate random basis 
-    """
-    print(f"Bob generating basis list of length {n}...")
-    
-    return rand_basis(n)
-
-
-def eve_
-
-
-def rand_basis(n: int) -> list[str]:
-    """
-        Helper function for calculating basis list
+        Function for generating basis list
     """
     return [random.choice(BASIS) for _ in range(n)]
 
@@ -54,7 +36,7 @@ def bob_measured_bits(bob_basis: list[str], alice_basis: list[str], alice_bits: 
         If they match Bob would have measured the bit correctly
         else Bob will measure a random bit, 0 or 1
     """
-    print("Bob measuring Alice's random qubits")
+    logging.debug("Bob measuring Alice's random qubits")
 
     bob_bits = [alice_bits[i] if bob_basis[i] == alice_basis[i] else random.randint(0,1) for i in range(len(alice_bits))]
     
@@ -107,18 +89,13 @@ def eve(n: int, alice_basis, alice_bits):
         Eve will "observe" the bit list from Alice, corrupting the list
     """
 
-    eve_basis = rand_basis(n)
-
-    print(f"eve basis: {eve_basis}")
-
-    print("Eve measuring Alice's random qubits")
+    eve_basis = generate_rand_basis(n)
+    logging.debug(f"eve basis: {eve_basis}")
 
     eve_bits = [alice_bits[i] if eve_basis[i] == alice_basis[i] else random.randint(0,1) for i in range(len(alice_bits))]
-    
-    print(f"Eve bits: {eve_bits}")
+    logging.debug(f"Eve bits: {eve_bits}")
 
     return eve_basis, eve_bits
-
 
 
 def main():
@@ -126,36 +103,36 @@ def main():
     # We will also generate an Eve to see if Alice and Bob can correctly throw away a key that was observed by Eve
 
     # Alice will generate a bits list of a certain length.
-    alice_rand_bit_list = alice_random_bits(LENGTH)
-    print(f"Alice produces random bit list: {alice_rand_bit_list}")
+    alice_bits = generate_alice_bits(LENGTH)
+    logging.debug(f"Alice produces random bit list: {alice_bits}")
 
     # Alice will also generate a basis list of the same length
-    alice_rand_basis_list = alice_random_basis(LENGTH)
-    print(f"Alice produces random basis list: {alice_rand_basis_list}")
+    alice_basis = generate_rand_basis(LENGTH)
+    logging.debug(f"Alice produces random basis list: {alice_basis}")
 
 
     # Eve will observe here
     # Simulate if Eve observes
     if EVE:
-        fake_alice_basis, fake_alice_bits = eve(LENGTH, alice_rand_basis_list, alice_rand_bit_list)
+        fake_alice_basis, fake_alice_bits = eve(LENGTH, alice_basis, alice_bits)
     
 
     # Bob will also generate a basis list
-    bob_rand_basis_list = bob_random_basis(LENGTH)
-    print(f"Bob produces random basis list: {bob_rand_basis_list}")
+    bob_basis = generate_rand_basis(LENGTH)
+    logging.debug(f"Bob produces random basis list: {bob_basis}")
 
     # Alice and Bob will compare their basis list, and Bob will "derive" a bit list
-    bob_bits = bob_measured_bits(bob_rand_basis_list, alice_rand_basis_list, alice_rand_bit_list)
-    print(f"Bob measures bits: {bob_bits}")
+    bob_bits = bob_measured_bits(bob_basis, alice_basis, alice_bits)
+    logging.debug(f"Bob measures bits: {bob_bits}")
     # In the event that Eve attacks
     if EVE:
-        bob_bits = bob_measured_bits(bob_rand_basis_list, fake_alice_basis, fake_alice_bits)
-        print(f"Bob measures bits: {bob_bits}")
+        bob_bits = bob_measured_bits(bob_basis, fake_alice_basis, fake_alice_bits)
+        logging.debug(f"Bob measures bits: {bob_bits}")
 
 
     # Now the bit lists will be sifted based on the basis lists matches
-    alice_key, bob_key = sift_keys(alice_rand_basis_list, bob_rand_basis_list, alice_rand_bit_list, bob_bits)
-    print(f"Alice key is {alice_key} and Bob key is {bob_key}")
+    alice_key, bob_key = sift_keys(alice_basis, bob_basis, alice_bits, bob_bits)
+    logging.debug(f"Alice key is {alice_key} and Bob key is {bob_key}")
 
     # Finally we will error check the actual bits publically
     alice_final, bob_final, error_rate = error_check(alice_key, bob_key)
