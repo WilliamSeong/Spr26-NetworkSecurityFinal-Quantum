@@ -1,8 +1,8 @@
-# Post-Quantum Encryption Protocol using ML-KEM and AES
+# Current Encryption Protocol using ECDH and AES
 
 import logging
 
-import kyber_py.ml_kem as ml_kem
+from cryptography.hazmat.primitives.asymmetric import ec
 
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives import hashes
@@ -12,41 +12,42 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import os
 
 
-MLKEM_512 = ml_kem.ML_KEM_512
-
 def server_keygen():
     """
-        Generate the encapsulation and decapsulation key using ML-KEM
+        Generate the server private and public key using ECDH
     """
 
-    ek, dk = MLKEM_512.keygen()
+    server_private_key = ec.generate_private_key(ec.SECP384R1())
+    server_public_key = server_private_key.public_key()
 
-    return (ek, dk)
+    return (server_private_key, server_public_key)
 
 
-def client_handshake(ek):
+def client_handshake(server_public_key):
     """
         Initiate the handshake
-        Generate the shared secret and ciphertext from the ek
+        Generate the client shared secret from the server public key and client private key
     """
 
-    K, c = MLKEM_512.encaps(ek)
+    client_private_key = ec.generate_private_key(ec.SECP384R1())
+    client_public_key = client_private_key.public_key()
+    client_shared_secret = client_private_key.exchange(ec.ECDH(), server_public_key)
 
-    return (K, c)
+    return (client_shared_secret, client_public_key)
 
-def server_handshake(dk, c):
+def server_handshake(server_private_key, client_public_key):
     """
         Complete the handshake
-        Generate the shared secret from the ciphertext using dk
+        Generate the shared secret from the client public key and server private key
     """
 
-    K = MLKEM_512.decaps(dk, c)
+    server_shared_secret = server_private_key.exchange(ec.ECDH(), client_public_key)
 
-    return K
+    return server_shared_secret
 
 def key_derivation(K):
     """
-        Use a kdf to derive a key from the shared secret generated from ML-KEM
+        Use a kdf to derive a key from the shared secret generated from ECDH
     """
 
     hkdf = HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=b"demo")
@@ -79,28 +80,28 @@ def decrypt_ciphertext(blob, key):
 
 def main():
     """
-        Toy implementation for ML-KEM between client and server
+        Toy implementation for ECDH between client and server
     """
 
     # For Debugging
     logging.basicConfig(level=logging.DEBUG)
 
-    # Server generates keys using ML-KEM
-    ek, dk = server_keygen()
+    # Server generates keys using DH
+    server_private_key, server_public_key = server_keygen()
 
-    # Client encapsulates to derive shared secret and ciphertext
-    client_K, c = client_handshake(ek)
+    # Client performs exchange to derive shared secret
+    client_shared_secret, client_public_key= client_handshake(server_public_key)
 
-    # Server decapsulates ciphertext to derive shared secret
-    server_K = server_handshake(dk, c)
+    # Server performs exchange to derive shared secret
+    server_shared_secret = server_handshake(server_private_key, client_public_key)
 
     # Check shared secret
-    assert client_K == server_K, "Shared secret error"
-    logging.debug("Successful ML-KEM Shared Key!")
+    assert client_shared_secret == server_shared_secret, "Shared secret error"
+    logging.debug("Successful ECDH Shared Key!")
 
     # Use HKDF to derive key from shared secret for AES
-    client_key = key_derivation(client_K)
-    server_key = key_derivation(server_K)
+    client_key = key_derivation(client_shared_secret)
+    server_key = key_derivation(server_shared_secret)
 
     # Check encryption key
     assert client_key == server_key, "Encryption key derivation error"
@@ -110,7 +111,7 @@ def main():
     message = b"This is a test message"
     logging.debug(f"Message: {message}")
     blob = encrypt_message(message, client_key)
-    logging.debug(f"AES-GCM Blob: {blob.hex()}")        
+    logging.debug(f"AES-GCM Blob: {blob.hex()}")
 
     # Decrypt message
     plaintext = decrypt_ciphertext(blob, server_key)
