@@ -86,7 +86,7 @@ def main():
     # For Debugging
     logging.basicConfig(level=logging.DEBUG)
 
-    # Server generates keys using DH
+    # Server generates keys using ECDH
     server_private_key, server_public_key = server_keygen()
 
     # Client performs exchange to derive shared secret
