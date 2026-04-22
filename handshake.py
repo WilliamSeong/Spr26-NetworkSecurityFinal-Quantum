@@ -83,7 +83,9 @@ def main():
     """
 
     # For Debugging
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
+
+    logging.info(f"This is a post-quantum handshake using ML-KEM key excange")
 
     # Server generates keys using ML-KEM
     ek, dk = server_keygen()
@@ -120,7 +122,12 @@ def main():
     assert message == plaintext, "Encryption error"
     logging.debug("Successful Encryption")
 
-    logging.debug("END OF TEST")
+    logging.info("END OF TEST SUMMARY\n------------------------------------")
+    logging.info(f"ek key length: {len(ek)}")
+    logging.info(f"ciphertext length: {len(c)}")
+    logging.info(f"shared secret length: {len(client_K)}")
+    logging.info(f"blob length: {len(blob)}")
+
 
 if __name__ == "__main__":
     main()

@@ -9,6 +9,8 @@ from cryptography.hazmat.primitives import hashes
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
+from cryptography.hazmat.primitives import serialization
+
 import os
 
 
@@ -84,7 +86,9 @@ def main():
     """
 
     # For Debugging
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
+
+    logging.info(f"This is a classical handshake using ECDH key excange")
 
     # Server generates keys using ECDH
     server_private_key, server_public_key = server_keygen()
@@ -121,7 +125,20 @@ def main():
     assert message == plaintext, "Encryption error"
     logging.debug("Successful Encryption")
 
-    logging.debug("END OF TEST")
+    logging.info("END OF TEST SUMMARY\n------------------------------------")
+    server_pk_bytes = server_public_key.public_bytes(
+        encoding=serialization.Encoding.X962,
+        format=serialization.PublicFormat.UncompressedPoint,
+    )
+    client_pk_bytes = client_public_key.public_bytes(
+        encoding=serialization.Encoding.X962,
+        format=serialization.PublicFormat.UncompressedPoint,
+    )
+    logging.info(f"server public key length: {len(server_pk_bytes)}")
+    logging.info(f"client public key length: {len(client_pk_bytes)}")
+    logging.info(f"shared secret length: {len(client_shared_secret)}")
+
+
 
 if __name__ == "__main__":
     main()
