@@ -11,27 +11,21 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 import os
 
-
-MLKEM_512 = ml_kem.ML_KEM_512
+MLKEM_768 = ml_kem.ML_KEM_768
 
 def server_keygen():
     """
         Generate the encapsulation and decapsulation key using ML-KEM
     """
-
-    ek, dk = MLKEM_512.keygen()
-
+    ek, dk = MLKEM_768.keygen()
     return (ek, dk)
-
 
 def client_handshake(ek):
     """
         Initiate the handshake
         Generate the shared secret and ciphertext from the ek
     """
-
-    K, c = MLKEM_512.encaps(ek)
-
+    K, c = MLKEM_768.encaps(ek)
     return (K, c)
 
 def server_handshake(dk, c):
@@ -39,19 +33,15 @@ def server_handshake(dk, c):
         Complete the handshake
         Generate the shared secret from the ciphertext using dk
     """
-
-    K = MLKEM_512.decaps(dk, c)
-
+    K = MLKEM_768.decaps(dk, c)
     return K
 
 def key_derivation(K):
     """
         Use a kdf to derive a key from the shared secret generated from ML-KEM
     """
-
     hkdf = HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=b"demo")
     aes_key = hkdf.derive(K)
-
     return aes_key
 
 def encrypt_message(message, key):
@@ -62,7 +52,6 @@ def encrypt_message(message, key):
     aesgcm = AESGCM(key)
     nonce = os.urandom(12)
     ct = aesgcm.encrypt(nonce, message, aad)
-
     return nonce+ct
 
 def decrypt_ciphertext(blob, key):
@@ -74,27 +63,42 @@ def decrypt_ciphertext(blob, key):
     nonce = blob[:12]
     ciphertext = blob[12:]
     pt = aesgcm.decrypt(nonce, ciphertext, aad)
-
     return pt
 
 def main():
     """
         Toy implementation for ML-KEM between client and server
     """
-
     # For Debugging
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
 
     logging.info(f"This is a post-quantum handshake using ML-KEM key excange")
 
     # Server generates keys using ML-KEM
     ek, dk = server_keygen()
+    logging.debug(f"Bob generates key pair: keygen() -> ek, dk")
+    logging.debug(f"ek: {ek.hex()}")
+    logging.info(f"dk: {dk.hex()}\n")
+
+    logging.debug(f"-----------------------------------------------------------------------------------------")
+    input()
 
     # Client encapsulates to derive shared secret and ciphertext
     client_K, c = client_handshake(ek)
+    logging.debug(f"Alice encapsulates ek: encaps(ek) -> K, c")
+    logging.debug(f"Alice K: {client_K.hex()}")
+    logging.debug(f"ciphertext: {c.hex()}\n")
+
+    logging.debug(f"-----------------------------------------------------------------------------------------")
+    input()
 
     # Server decapsulates ciphertext to derive shared secret
     server_K = server_handshake(dk, c)
+    logging.debug(f"Bob decapsulates c: decaps(dk, c) -> K")
+    logging.debug(f"Bob K: {server_K.hex()}")
+
+    logging.debug(f"-----------------------------------------------------------------------------------------")
+    input()
 
     # Check shared secret
     assert client_K == server_K, "Shared secret error"
@@ -127,7 +131,6 @@ def main():
     logging.info(f"ciphertext length: {len(c)}")
     logging.info(f"shared secret length: {len(client_K)}")
     logging.info(f"blob length: {len(blob)}")
-
 
 if __name__ == "__main__":
     main()

@@ -1,19 +1,8 @@
-secret = [0, 1, 0, 1]
+from qiskit import QuantumCircuit
+from qiskit.quantum_info import Statevector
+from qiskit_aer import AerSimulator
 
-def all_possible_secrets():
-
-    all = []
-    current=[0,0,0,0]
-    for w in range(2):
-        current[0] = w
-        for x in range(2):
-            current[1] = x
-            for y in range(2):
-                current[2] = y
-                for z in range(2):
-                    current[3] = z
-                    all += [current[:]]
-    return all
+secret = [1, 0, 1, 1]
 
 def optimal_all():
 
@@ -25,11 +14,63 @@ def secret_checker(input):
         return True
     return False
 
+def oracle(qc):
+    # Flip the amp for the target outcome 1011
+    qc.x(2)
+    qc.h(3)
+    qc.mcx([0, 1, 2], 3)
+    qc.h(3)
+    qc.x(2)
+
+    return qc
+
+def diffuse(qc):
+    # Diffuse the qubits to get the desired outcome
+
+    qc.h(range(4))
+    qc.x(range(4))
+    qc.h(3)
+    qc.mcx([0, 1, 2], 3)
+    qc.h(3)
+    qc.x(range(4))
+    qc.h(range(4))
+
+    qc.barrier()
+    
+    state_post = Statevector(qc)
+    print("During oracle/diffuse:")
+    print(state_post)
+
+    return qc
+
 def main():
-    result = secret_checker(secret)
-    print(result)
-    all = optimal_all()
-    print(all)
+    # initialize qubits
+    n = 4
+    qc = QuantumCircuit(n, n)
+    qc.h(range(n))
+    qc.barrier()
+
+    state_pre = Statevector(qc)
+    print("Before oracle and diffuse:")
+    print(state_pre)
+
+    for _ in range(15):
+        oracle(qc)
+        diffuse(qc)
+
+    state_post = Statevector(qc)
+    print("After oracle and diffuse:")
+    print(state_post)
+    print(qc.draw())
+
+    qc.measure(range(4), range(4))
+
+    simulator = AerSimulator()
+    result = simulator.run(qc, shots=1024).result()
+    counts = result.get_counts()
+
+    print(counts)
+
 
 if __name__ == "__main__":
     main()

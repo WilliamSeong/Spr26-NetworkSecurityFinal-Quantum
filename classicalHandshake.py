@@ -18,43 +18,34 @@ def server_keygen():
     """
         Generate the server private and public key using ECDH
     """
-
     server_private_key = ec.generate_private_key(ec.SECP384R1())
     server_public_key = server_private_key.public_key()
-
     return (server_private_key, server_public_key)
-
 
 def client_handshake(server_public_key):
     """
         Initiate the handshake
         Generate the client shared secret from the server public key and client private key
     """
-
     client_private_key = ec.generate_private_key(ec.SECP384R1())
     client_public_key = client_private_key.public_key()
     client_shared_secret = client_private_key.exchange(ec.ECDH(), server_public_key)
-
-    return (client_shared_secret, client_public_key)
+    return (client_shared_secret, client_public_key, client_private_key)
 
 def server_handshake(server_private_key, client_public_key):
     """
         Complete the handshake
         Generate the shared secret from the client public key and server private key
     """
-
     server_shared_secret = server_private_key.exchange(ec.ECDH(), client_public_key)
-
     return server_shared_secret
 
 def key_derivation(K):
     """
         Use a kdf to derive a key from the shared secret generated from ECDH
     """
-
     hkdf = HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=b"demo")
     aes_key = hkdf.derive(K)
-
     return aes_key
 
 def encrypt_message(message, key):
@@ -65,7 +56,6 @@ def encrypt_message(message, key):
     aesgcm = AESGCM(key)
     nonce = os.urandom(12)
     ct = aesgcm.encrypt(nonce, message, aad)
-
     return nonce+ct
 
 def decrypt_ciphertext(blob, key):
@@ -77,27 +67,43 @@ def decrypt_ciphertext(blob, key):
     nonce = blob[:12]
     ciphertext = blob[12:]
     pt = aesgcm.decrypt(nonce, ciphertext, aad)
-
     return pt
 
 def main():
     """
         Toy implementation for ECDH between client and server
     """
-
     # For Debugging
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
 
     logging.info(f"This is a classical handshake using ECDH key excange")
 
     # Server generates keys using ECDH
     server_private_key, server_public_key = server_keygen()
+    logging.debug(f"Bob generates key pair")
+    logging.debug(f"Bob's public key: {server_public_key.public_bytes(encoding=serialization.Encoding.DER, format=serialization.PublicFormat.SubjectPublicKeyInfo).hex()}")
+    logging.info(f"Bob's private key: {server_private_key.private_bytes(encoding=serialization.Encoding.DER, format=serialization.PrivateFormat.PKCS8, encryption_algorithm=serialization.NoEncryption()).hex()}\n")
+
+    logging.debug(f"-----------------------------------------------------------------------------------------")
+    input()
 
     # Client performs exchange to derive shared secret
-    client_shared_secret, client_public_key= client_handshake(server_public_key)
+    client_shared_secret, client_public_key, client_private_key= client_handshake(server_public_key)
+    logging.debug(f"Alice generate key pair and derives shared secret from Alice's private key and Bob's public key")
+    logging.debug(f"Alice public key: {client_public_key.public_bytes(encoding=serialization.Encoding.DER, format=serialization.PublicFormat.SubjectPublicKeyInfo).hex()}")
+    logging.debug(f"Alice private key: {client_private_key.private_bytes(encoding=serialization.Encoding.DER, format=serialization.PrivateFormat.PKCS8, encryption_algorithm=serialization.NoEncryption()).hex()}")
+    logging.debug(f"Alice shared secret: {client_shared_secret.hex()}\n")
+
+    logging.debug(f"-----------------------------------------------------------------------------------------")
+    input()
 
     # Server performs exchange to derive shared secret
     server_shared_secret = server_handshake(server_private_key, client_public_key)
+    logging.debug(f"Bob generates shared secret from Alice public key and Bob private key")
+    logging.debug(f"Bob shared secret: {server_shared_secret.hex()}\n")
+
+    logging.debug(f"-----------------------------------------------------------------------------------------")
+    input()
 
     # Check shared secret
     assert client_shared_secret == server_shared_secret, "Shared secret error"
@@ -137,6 +143,8 @@ def main():
     logging.info(f"server public key length: {len(server_pk_bytes)}")
     logging.info(f"client public key length: {len(client_pk_bytes)}")
     logging.info(f"shared secret length: {len(client_shared_secret)}")
+    logging.info(f"blob length: {len(blob)}")
+
 
 
 
