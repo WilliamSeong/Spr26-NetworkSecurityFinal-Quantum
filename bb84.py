@@ -5,7 +5,7 @@ import logging
 
 LENGTH = 1000
 BASIS = ["+", "x"]
-EVE = False
+EVE = True
 
 
 def generate_alice_bits(n: int) -> list[int]:
@@ -85,6 +85,9 @@ def simulation():
     # We will go through each process of the key exchange simulating Alice and Bob.
     # We will also generate an Eve to see if Alice and Bob can correctly throw away a key that was observed by Eve
     # Alice will generate a bits list of a certain length.
+    if EVE:
+        logging.info("Eve is measuring")
+    
     alice_bits = generate_alice_bits(LENGTH)
     logging.debug(f"Alice produces random bit list: {alice_bits}")
 
@@ -92,7 +95,8 @@ def simulation():
     alice_basis = generate_rand_basis(LENGTH)
     logging.debug(f"Alice produces random basis list: {alice_basis}")
     logging.debug(f"-----------------------------------------------------------------------------------------")
-    input()
+    if logging.getLogger().isEnabledFor(logging.DEBUG):
+        input()
 
     # Eve will observe here
     # Simulate if Eve observes
@@ -101,6 +105,7 @@ def simulation():
         logging.debug(f"Eve produces random basis list: {fake_alice_basis}")
         logging.debug(f"Eve produces random bit list: {fake_alice_bits}")
         logging.debug(f"-----------------------------------------------------------------------------------------")
+    if logging.getLogger().isEnabledFor(logging.DEBUG):
         input()
 
     # Bob will also generate a basis list
@@ -112,27 +117,30 @@ def simulation():
         bob_bits = bob_measured_bits(bob_basis, fake_alice_basis, fake_alice_bits)
         logging.debug(f"Bob measures bits: {bob_bits}")
         logging.debug(f"-----------------------------------------------------------------------------------------")
-        input()
+        if logging.getLogger().isEnabledFor(logging.DEBUG):
+            input()
 
     else:
         # Alice and Bob will compare their basis list, and Bob will "derive" a bit list
         bob_bits = bob_measured_bits(bob_basis, alice_basis, alice_bits)
         logging.debug(f"Bob measures bits: {bob_bits}")
         logging.debug(f"-----------------------------------------------------------------------------------------")
-        input()
+        if logging.getLogger().isEnabledFor(logging.DEBUG):
+            input()
 
     # Now the bit lists will be sifted based on the basis lists matches
     alice_key, bob_key = sift_keys(alice_basis, bob_basis, alice_bits, bob_bits)
     logging.debug(f"Alice key is {alice_key}")
     logging.debug(f"Bob key is {bob_key}")
     logging.debug(f"-----------------------------------------------------------------------------------------")
-    input()
+    if logging.getLogger().isEnabledFor(logging.DEBUG):
+        input()
 
     # Finally we will error check the actual bits publically
     alice_final, bob_final, error_rate = error_check(alice_key, bob_key)
     logging.debug(f"Alice Final: {alice_final}")
     logging.debug(f"Bob Final: {bob_final}")
-    print(f"error rate {error_rate}")
+    logging.info(f"error rate {error_rate}")
     return error_rate
 
 def main():
