@@ -5,7 +5,7 @@ import logging
 
 LENGTH = 1000
 BASIS = ["+", "x"]
-EVE = True
+EVE = False
 
 
 def generate_alice_bits(n: int) -> list[int]:
