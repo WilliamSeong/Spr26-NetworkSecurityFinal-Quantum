@@ -70,7 +70,7 @@ def main():
         Toy implementation for ML-KEM between client and server
     """
     # For Debugging
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
 
     logging.info(f"This is a post-quantum handshake using ML-KEM key excange")
 
@@ -78,10 +78,11 @@ def main():
     ek, dk = server_keygen()
     logging.debug(f"Bob generates key pair: keygen() -> ek, dk")
     logging.debug(f"ek: {ek.hex()}")
-    logging.info(f"dk: {dk.hex()}\n")
+    logging.debug(f"dk: {dk.hex()}\n")
 
     logging.debug(f"-----------------------------------------------------------------------------------------")
-    input()
+    if logging.getLogger().isEnabledFor(logging.DEBUG):
+        input()
 
     # Client encapsulates to derive shared secret and ciphertext
     client_K, c = client_handshake(ek)
@@ -90,7 +91,8 @@ def main():
     logging.debug(f"ciphertext: {c.hex()}\n")
 
     logging.debug(f"-----------------------------------------------------------------------------------------")
-    input()
+    if logging.getLogger().isEnabledFor(logging.DEBUG):
+        input()
 
     # Server decapsulates ciphertext to derive shared secret
     server_K = server_handshake(dk, c)
@@ -98,11 +100,12 @@ def main():
     logging.debug(f"Bob K: {server_K.hex()}")
 
     logging.debug(f"-----------------------------------------------------------------------------------------")
-    input()
+    if logging.getLogger().isEnabledFor(logging.DEBUG):
+        input()
 
     # Check shared secret
     assert client_K == server_K, "Shared secret error"
-    logging.debug("Successful ML-KEM Shared Key!")
+    logging.info(f"Successful ML-KEM Shared Key: {client_K.hex()}")
 
     # Use HKDF to derive key from shared secret for AES
     client_key = key_derivation(client_K)
