@@ -74,7 +74,7 @@ def main():
         Toy implementation for ECDH between client and server
     """
     # For Debugging
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
 
     logging.info(f"This is a classical handshake using ECDH key excange")
 
@@ -82,10 +82,11 @@ def main():
     server_private_key, server_public_key = server_keygen()
     logging.debug(f"Bob generates key pair")
     logging.debug(f"Bob's public key: {server_public_key.public_bytes(encoding=serialization.Encoding.DER, format=serialization.PublicFormat.SubjectPublicKeyInfo).hex()}")
-    logging.info(f"Bob's private key: {server_private_key.private_bytes(encoding=serialization.Encoding.DER, format=serialization.PrivateFormat.PKCS8, encryption_algorithm=serialization.NoEncryption()).hex()}\n")
+    logging.debug(f"Bob's private key: {server_private_key.private_bytes(encoding=serialization.Encoding.DER, format=serialization.PrivateFormat.PKCS8, encryption_algorithm=serialization.NoEncryption()).hex()}\n")
 
     logging.debug(f"-----------------------------------------------------------------------------------------")
-    input()
+    if logging.getLogger().isEnabledFor(logging.DEBUG):
+        input()
 
     # Client performs exchange to derive shared secret
     client_shared_secret, client_public_key, client_private_key= client_handshake(server_public_key)
@@ -95,7 +96,8 @@ def main():
     logging.debug(f"Alice shared secret: {client_shared_secret.hex()}\n")
 
     logging.debug(f"-----------------------------------------------------------------------------------------")
-    input()
+    if logging.getLogger().isEnabledFor(logging.DEBUG):
+        input()
 
     # Server performs exchange to derive shared secret
     server_shared_secret = server_handshake(server_private_key, client_public_key)
@@ -103,11 +105,12 @@ def main():
     logging.debug(f"Bob shared secret: {server_shared_secret.hex()}\n")
 
     logging.debug(f"-----------------------------------------------------------------------------------------")
-    input()
+    if logging.getLogger().isEnabledFor(logging.DEBUG):
+        input()
 
     # Check shared secret
     assert client_shared_secret == server_shared_secret, "Shared secret error"
-    logging.debug("Successful ECDH Shared Key!")
+    logging.debug(f"Successful ECDH Shared Key: {client_shared_secret.hex()}")
 
     # Use HKDF to derive key from shared secret for AES
     client_key = key_derivation(client_shared_secret)
@@ -144,8 +147,6 @@ def main():
     logging.info(f"client public key length: {len(client_pk_bytes)}")
     logging.info(f"shared secret length: {len(client_shared_secret)}")
     logging.info(f"blob length: {len(blob)}")
-
-
 
 
 if __name__ == "__main__":
