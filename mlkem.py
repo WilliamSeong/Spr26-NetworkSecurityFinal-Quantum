@@ -18,8 +18,8 @@ def main():
 
     # Bob generate encapsulation key and decapsulation key
     ek, dk = mlkem_512.keygen()
-    # logging.debug("encapsulation key:", ek)
-    # logging.debug("decapsulation key:", dk)
+    logging.debug("encapsulation key:", ek)
+    logging.debug("decapsulation key:", dk)
 
     # Alice encapsulates Bob's ek to produce the secret and cipher
     alice_K, c = mlkem_512.encaps(ek)
