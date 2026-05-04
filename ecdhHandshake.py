@@ -74,7 +74,7 @@ def main():
         Toy implementation for ECDH between client and server
     """
     # For Debugging
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
 
     logging.info(f"This is a classical handshake using ECDH key excange")
 

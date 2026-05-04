@@ -70,7 +70,7 @@ def main():
         Toy implementation for ML-KEM between client and server
     """
     # For Debugging
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
 
     logging.info(f"This is a post-quantum handshake using ML-KEM key excange")
 
